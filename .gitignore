@@ -3,8 +3,7 @@ dist/
 
 # Visual tester output — add to .gitignore to avoid committing screenshots
 # (or selectively commit baseline/ only)
-snapshots/current/
-snapshots/diff/
+snapshots/
 visual-report/
 
 # Personal config — contains real app URLs, do not commit

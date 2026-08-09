@@ -3,6 +3,8 @@ import { Command }          from 'commander';
 import * as p               from '@clack/prompts';
 import pc                   from 'picocolors';
 import openBrowser          from 'open';
+import fs                   from 'node:fs';
+import path                 from 'node:path';
 import { spawn }            from 'node:child_process';
 
 import { loadConfig, runSetupWizard, type VisualConfig } from './config.js';
@@ -47,6 +49,8 @@ program
   .command('baseline')
   .description('Capture live app screenshots as the baseline reference')
   .option('--browser <name>', 'Override browser for this run (chromium|webkit|firefox)')
+  .option('--push', 'Upload the captured baselines to configured S3 storage')
+  .option('--shard <shard>', 'Run a specific shard (e.g. 1/3)')
   .action(async (opts, cmd) => {
     printBanner();
     const globalOpts = cmd.parent?.opts() as { config?: string; open: boolean };
@@ -71,12 +75,17 @@ program
     spinner.start('Launching browser and capturing screenshots…');
 
     try {
-      await captureSnapshots(config, 'baseline', browserOverride);
+      await captureSnapshots(config, 'baseline', browserOverride, opts.shard);
       spinner.stop(pc.green('✓ Baseline captured successfully'));
     } catch (err) {
       spinner.stop(pc.red('✗ Baseline capture failed'));
       logger.error(String(err));
       process.exit(2);
+    }
+
+    if (opts.push && config.storage?.provider === 's3') {
+      const { pushBaselines } = await import('./utils/storage.js');
+      await pushBaselines(config);
     }
 
     p.outro(
@@ -91,6 +100,8 @@ program
   .command('test')
   .description('Capture current app, diff against baseline, and generate a report')
   .option('--browser <name>', 'Override browser for this run (chromium|webkit|firefox)')
+  .option('--pull', 'Download baselines from configured S3 storage before testing')
+  .option('--shard <shard>', 'Run a specific shard (e.g. 1/3)')
   .action(async (opts, cmd) => {
     printBanner();
     const globalOpts = cmd.parent?.opts() as { config?: string; open: boolean };
@@ -112,12 +123,17 @@ program
       process.exit(2);
     }
 
+    if (opts.pull && config.storage?.provider === 's3') {
+      const { pullBaselines } = await import('./utils/storage.js');
+      await pullBaselines(config);
+    }
+
     // Step 1: capture current
     const spinner = p.spinner();
     spinner.start('Capturing current app screenshots…');
 
     try {
-      await captureSnapshots(config, 'current', browserOverride);
+      await captureSnapshots(config, 'current', browserOverride, opts.shard);
       spinner.stop(pc.green('✓ Current screenshots captured'));
     } catch (err) {
       spinner.stop(pc.red('✗ Capture failed'));
@@ -142,6 +158,10 @@ program
     // Step 3: print results
     printSummaryTable(results);
     printFinalSummary(results);
+
+    // Save JSON results for potential sharding/merging
+    const jsonPath = path.join(process.cwd(), 'visual-report', 'results.json');
+    fs.writeFileSync(jsonPath, JSON.stringify(results, null, 2));
 
     // Step 4: generate HTML report
     let reportPath: string;
@@ -225,6 +245,82 @@ authCmd
     } catch (err) {
       logger.error(String(err));
       process.exit(2);
+    }
+  });
+
+// ── merge-reports ─────────────────────────────────────────────────────────────
+
+program
+  .command('merge-reports')
+  .description('Merge multiple JSON test results (from sharded runs) into a single HTML report')
+  .option('--dir <path>', 'Directory containing the JSON files (default: ./visual-report)')
+  .action(async (opts, cmd) => {
+    printBanner();
+    const globalOpts = cmd.parent?.opts() as { open: boolean };
+    const dir = path.resolve(process.cwd(), opts.dir || 'visual-report');
+
+    if (!fs.existsSync(dir)) {
+      logger.error(`Directory not found: ${dir}`);
+      process.exit(2);
+    }
+
+    const files = fs.readdirSync(dir).filter(f => f.endsWith('.json') && f !== 'auth.json');
+    if (files.length === 0) {
+      logger.warn(`No JSON result files found in ${dir}`);
+      return;
+    }
+
+    const allResults: any[] = [];
+    for (const file of files) {
+      try {
+        const content = fs.readFileSync(path.join(dir, file), 'utf-8');
+        const results = JSON.parse(content);
+        if (Array.isArray(results)) {
+          allResults.push(...results);
+        }
+      } catch (err) {
+        logger.warn(`Could not parse ${file}: ${String(err)}`);
+      }
+    }
+
+    if (allResults.length === 0) {
+      logger.error('No valid results found to merge.');
+      process.exit(2);
+    }
+
+    const summary = buildSummary(allResults, 0); // we don't have cumulative duration easily
+    
+    // Step 3: print results
+    printSummaryTable(allResults);
+    printFinalSummary(allResults);
+
+    // Step 4: generate HTML report
+    let reportPath: string;
+    try {
+      reportPath = generateReport(allResults, summary);
+      logger.success(`Merged report generated → ${pc.bold(reportPath)}`);
+    } catch (err) {
+      logger.warn(`Could not generate merged HTML report: ${String(err)}`);
+      reportPath = '';
+    }
+
+    // Step 5: auto-open report
+    if (reportPath && globalOpts.open !== false) {
+      try {
+        await openBrowser(reportPath);
+      } catch {
+        // Non-fatal
+      }
+    }
+
+    p.outro(
+      summary.failed > 0 || summary.errors > 0
+        ? pc.red(`✗ ${summary.failed} regression${summary.failed !== 1 ? 's' : ''} detected`)
+        : pc.green(`✓ All ${summary.total} tests passed`),
+    );
+
+    if (summary.failed > 0 || summary.errors > 0) {
+      process.exit(1);
     }
   });
 

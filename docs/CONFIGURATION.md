@@ -147,6 +147,20 @@ Bubble Repeating Groups and API-driven pages may appear blank briefly after load
 }
 ```
 
+#### `elements` (optional) — Component-Level Testing
+If you don't want to test the entire page but only specific components (like a form or a sidebar), you can provide a list of elements. The tester will take a screenshot of each element individually.
+
+```jsonc
+{
+  "path": "/dashboard",
+  "name": "Dashboard",
+  "elements": [
+    { "name": "Sidebar", "selector": ".sidebar-container" },
+    { "name": "PaymentForm", "selector": "#payment-form" }
+  ]
+}
+```
+
 ---
 
 ## `auth` Object
@@ -196,7 +210,23 @@ If `true`, webhooks will only be sent if at least one test failed or errored. If
 
 ---
 
-## 5. Options (`options`) Object
+## 5. Storage (`storage`)
+
+Configure AWS S3-compatible cloud storage for your baseline snapshots. This is essential for CI/CD pipelines (so runners can download baselines dynamically) and prevents Git from bloating.
+
+```jsonc
+"storage": {
+  "provider": "s3",
+  "bucket": "my-bubble-baselines",
+  "region": "eu-central-1",
+  "prefix": "snapshots/"
+}
+```
+*Note: Authentication relies on standard AWS Environment Variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`).*
+
+---
+
+## 6. Options (`options`) Object
 
 ### `threshold` *(number, 0.0–1.0, default: `0.1`)*
 
@@ -239,6 +269,15 @@ An array of absolute coordinate regions to mask with a solid grey block. Useful 
     "height": 50, 
     "page": "Dashboard" // Optional: only apply this mask to the "Dashboard" page
   }
+]
+```
+
+### `options.ignoreColors` (array of objects)
+Instructs the diffing engine to completely ignore specific RGB colors (e.g. if you have dynamic text that is always red). Any pixel matching this color will not trigger a mismatch.
+
+```jsonc
+"ignoreColors": [
+  { "r": 255, "g": 0, "b": 0, "tolerance": 15 } // Ignores pure red with a tolerance of 15
 ]
 ```
 

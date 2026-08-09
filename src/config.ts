@@ -18,6 +18,10 @@ const pageSchema = z.object({
   name:            z.string().min(1, 'Page name is required'),
   waitForSelector: z.string().optional(),
   waitForTimeout:  z.number().int().positive().optional(),
+  elements: z.array(z.object({
+    name:     z.string().min(1, 'Element name is required'),
+    selector: z.string().min(1, 'Element selector is required'),
+  })).optional(),
 });
 
 const autoLoginSchema = z.object({
@@ -48,10 +52,25 @@ const notificationsSchema = z.object({
   onFailureOnly: z.boolean().default(true),
 });
 
+const storageSchema = z.object({
+  provider: z.literal('s3'),
+  bucket:   z.string(),
+  region:   z.string(),
+  prefix:   z.string().default('baselines/'),
+});
+
+const ignoreColorSchema = z.object({
+  r: z.number().int().min(0).max(255),
+  g: z.number().int().min(0).max(255),
+  b: z.number().int().min(0).max(255),
+  tolerance: z.number().int().min(0).max(255).default(10),
+});
+
 const optionsSchema = z.object({
   threshold:       z.number().min(0).max(1).default(0.1),
   maskSelectors:   z.array(z.string()).default([]),
   ignoreRegions:   z.array(ignoreRegionSchema).default([]),
+  ignoreColors:    z.array(ignoreColorSchema).default([]),
   failOnMismatch:  z.boolean().default(true),
   fullPage:        z.boolean().default(false),
   concurrency:     z.number().int().positive().max(10).default(3),
@@ -71,10 +90,11 @@ export const configSchema = z.object({
       { name: 'desktop', width: 1920, height: 1080 },
       { name: 'mobile',  width: 375,  height: 812  },
     ]),
-  pages:   z.array(pageSchema).min(1, 'At least one page is required'),
-  auth:    authSchema.default({ enabled: false, storageStatePath: './auth.json' }),
+  pages:         z.array(pageSchema).min(1, 'At least one page is required'),
+  auth:          authSchema.default({ enabled: false, storageStatePath: './auth.json' }),
   notifications: notificationsSchema.optional(),
-  options: optionsSchema.default({}),
+  storage:       storageSchema.optional(),
+  options:       optionsSchema.default({}),
 });
 
 export type VisualConfig = z.infer<typeof configSchema>;
@@ -291,6 +311,7 @@ export async function runSetupWizard(): Promise<VisualConfig> {
       failOnMismatch:  failOnMismatch as boolean,
       maskSelectors,
       ignoreRegions:   [],
+      ignoreColors:    [],
       concurrency:     3,
     },
   };

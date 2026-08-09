@@ -98,6 +98,40 @@ async function diffOne(
     const totalPixels       = width * height;
     const diffImg           = new PNG({ width, height });
 
+    // Preprocess: ignore specific colors
+    if (config.options.ignoreColors && config.options.ignoreColors.length > 0) {
+      for (let i = 0; i < baselineImg.data.length; i += 4) {
+        for (const c of config.options.ignoreColors) {
+          // Check baseline image pixel
+          const bR = baselineImg.data[i];
+          const bG = baselineImg.data[i + 1];
+          const bB = baselineImg.data[i + 2];
+          
+          const matchBase = 
+            Math.abs(bR - c.r) <= c.tolerance &&
+            Math.abs(bG - c.g) <= c.tolerance &&
+            Math.abs(bB - c.b) <= c.tolerance;
+
+          // Check current image pixel
+          const cR = currentImg.data[i];
+          const cG = currentImg.data[i + 1];
+          const cB = currentImg.data[i + 2];
+
+          const matchCur = 
+            Math.abs(cR - c.r) <= c.tolerance &&
+            Math.abs(cG - c.g) <= c.tolerance &&
+            Math.abs(cB - c.b) <= c.tolerance;
+
+          if (matchBase || matchCur) {
+            // Mask pixel in both images (make it black & transparent)
+            baselineImg.data[i] = baselineImg.data[i + 1] = baselineImg.data[i + 2] = baselineImg.data[i + 3] = 0;
+            currentImg.data[i] = currentImg.data[i + 1] = currentImg.data[i + 2] = currentImg.data[i + 3] = 0;
+            break;
+          }
+        }
+      }
+    }
+
     const mismatchPixels = pixelmatch(
       baselineImg.data,
       currentImg.data,

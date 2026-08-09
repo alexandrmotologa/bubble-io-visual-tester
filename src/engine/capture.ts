@@ -59,6 +59,7 @@ export async function captureSnapshots(
   config:          VisualConfig,
   target:          SnapshotTarget,
   browserOverride?: BrowserName,
+  shard?:          string,
 ): Promise<void> {
   const browsersToRun: BrowserName[] = browserOverride
     ? [browserOverride]
@@ -71,7 +72,7 @@ export async function captureSnapshots(
     const browser = await BROWSER_LAUNCHERS[browserName].launch({ headless: true });
 
     try {
-      await captureForBrowser(config, target, browserName, browser);
+      await captureForBrowser(config, target, browserName, browser, shard);
     } finally {
       await browser.close();
     }
@@ -85,14 +86,31 @@ async function captureForBrowser(
   target:      SnapshotTarget,
   browserName: BrowserName,
   browser:     Browser,
+  shard?:      string,
 ): Promise<void> {
   const baseUrl = target === 'baseline' ? config.appUrlLive : config.appUrlTest;
   const sem     = new Semaphore(config.options.concurrency);
 
   // Build every combination of page × viewport
-  const tasks = config.viewports.flatMap(viewport =>
+  let tasks = config.viewports.flatMap(viewport =>
     config.pages.map(page => ({ viewport, page })),
   );
+
+  if (shard) {
+    const [currentStr, totalStr] = shard.split('/');
+    const current = parseInt(currentStr, 10);
+    const total = parseInt(totalStr, 10);
+    
+    if (isNaN(current) || isNaN(total) || current < 1 || current > total) {
+      throw new Error(`Invalid shard value: ${shard}. Expected format: <current>/<total> (e.g. 1/3)`);
+    }
+
+    const shardSize = Math.ceil(tasks.length / total);
+    const startIndex = (current - 1) * shardSize;
+    const endIndex = Math.min(startIndex + shardSize, tasks.length);
+    tasks = tasks.slice(startIndex, endIndex);
+    logger.info(`Running shard ${current}/${total} (${tasks.length} out of ${config.viewports.length * config.pages.length} tasks)`);
+  }
 
   const total = tasks.length;
   let completed = 0;
@@ -191,6 +209,19 @@ async function capturePage(
       fullPage: config.options.fullPage,
       type:     'png',
     });
+
+    // Take component-level element screenshots
+    if (page.elements && page.elements.length > 0) {
+      for (const el of page.elements) {
+        const elOutputPath = getSnapshotPath(target, `${page.name}-${el.name}`, viewport.name, browserName);
+        try {
+          await pwPage.locator(el.selector).screenshot({ path: elOutputPath, type: 'png' });
+        } catch (err) {
+          // Warning but non-fatal for the whole test
+          console.warn(`Could not capture element ${el.name} (${el.selector}) on page ${page.name}`);
+        }
+      }
+    }
   } finally {
     await pwPage.close();
   }

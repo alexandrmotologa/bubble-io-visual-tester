@@ -10,9 +10,13 @@
 
 ---
 
-## Why?
-
 Bubble.io apps rely heavily on visual layouts, responsive constraints, and dynamic states. A single editor change can silently break your mobile layout, shift a Group container, or cause a Repeating Group to overflow. There is no source diff to catch this — only your eyes.
+
+- **Component-Level Testing**: Screenshot specific DOM elements (like forms or sidebars) instead of just the whole page.
+- **Enterprise CI/CD Sharding**: Split your tests across dozens of CI runners (`--shard 1/3`) for lightning-fast execution.
+- **Cloud Storage (AWS S3)**: Automatically push/pull baseline snapshots from S3 to keep your Git repository clean.
+- **Smart Masking**: Ignore dynamic areas via CSS selectors (`.timestamp`), exact coordinates, or specific RGB colors!
+- **Auto-Login Support**: Supports fully automated credentials login or persisting session cookies for protected pages.
 
 **bubble-io-visual-tester** automates this process:
 

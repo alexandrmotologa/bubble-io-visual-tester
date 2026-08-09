@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.0] — 2026-08-09
+
+### Added
+- **Component-Level Testing**: You can now define an `elements` array in your `pages` config to capture specific DOM selectors instead of the whole page.
+- **S3 Cloud Storage**: Added `storage` config block. The CLI can now push (`--push`) and pull (`--pull`) baseline snapshots from AWS S3 compatible buckets.
+- **Color Ignoring**: Added `ignoreColors` to `options` to automatically mask dynamic colors across all snapshots before diffing.
+- **CI Sharding**: The `test` command now accepts a `--shard <current>/<total>` flag to parallelize work.
+- **Merge Reports**: Added `merge-reports` command to merge multiple sharded JSON results into a single HTML report.
+
+---
+
 ## [1.1.0] — 2026-08-09
 
 ### Added
