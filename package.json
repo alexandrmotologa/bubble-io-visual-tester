@@ -1,6 +1,6 @@
 {
   "name": "bubble-io-visual-tester",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Visual regression testing CLI for Bubble.io applications — pixel-perfect screenshot diffing across viewports and browsers",
   "type": "module",
   "main": "dist/index.js",

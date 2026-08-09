@@ -11,7 +11,12 @@ import { loadConfig, runSetupWizard, type VisualConfig } from './config.js';
 import { captureSnapshots, captureAuthState }            from './engine/capture.js';
 import { runDiff, buildSummary }                         from './engine/diff.js';
 import { generateReport, getReportPath }                 from './reporters/html-reporter.js';
-import { cleanSnapshots, cleanReport, fileExists }       from './utils/paths.js';
+import {
+  cleanSnapshots,
+  cleanReport,
+  ensureReportDir,
+  fileExists,
+} from './utils/paths.js';
 import { printBanner, printSummaryTable, printFinalSummary, logger } from './utils/logger.js';
 import type { BrowserName }                              from './types.js';
 import { VERSION }                                       from './version.js';
@@ -160,6 +165,7 @@ program
     printFinalSummary(results);
 
     // Save JSON results for potential sharding/merging
+    ensureReportDir();
     const jsonPath = path.join(process.cwd(), 'visual-report', 'results.json');
     fs.writeFileSync(jsonPath, JSON.stringify(results, null, 2));
 
