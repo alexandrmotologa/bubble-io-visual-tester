@@ -1,0 +1,34 @@
+node_modules/
+dist/
+
+# Visual tester output — add to .gitignore to avoid committing screenshots
+# (or selectively commit baseline/ only)
+snapshots/current/
+snapshots/diff/
+visual-report/
+
+# Personal config — contains real app URLs, do not commit
+# Copy visual.config.example.json → visual.config.json instead
+visual.config.json
+
+# TypeScript incremental build info (generated, not needed in VCS)
+tsconfig.tsbuildinfo
+
+# Auth state — NEVER commit this file (contains session cookies)
+auth.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Logs
+*.log
+npm-debug.log*

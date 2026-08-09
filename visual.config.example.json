@@ -1,0 +1,32 @@
+{
+  "appUrlTest": "https://myapp.bubbleapps.io/version-test",
+  "appUrlLive": "https://myapp.bubbleapps.io",
+  "browsers": ["chromium"],
+  "viewports": [
+    { "name": "desktop", "width": 1920, "height": 1080 },
+    { "name": "tablet",  "width": 768,  "height": 1024 },
+    { "name": "mobile",  "width": 375,  "height": 812  }
+  ],
+  "pages": [
+    { "path": "/", "name": "Home" },
+    { "path": "/login", "name": "Login Page" },
+    {
+      "path": "/dashboard",
+      "name": "User Dashboard",
+      "waitForSelector": ".dashboard-loaded",
+      "waitForTimeout": 2000
+    }
+  ],
+  "auth": {
+    "enabled": false,
+    "loginUrl": "https://myapp.bubbleapps.io/login",
+    "storageStatePath": "./auth.json"
+  },
+  "options": {
+    "threshold": 0.1,
+    "maskSelectors": [".dynamic-timestamp", ".user-avatar", ".realtime-chart"],
+    "failOnMismatch": true,
+    "fullPage": false,
+    "concurrency": 3
+  }
+}
