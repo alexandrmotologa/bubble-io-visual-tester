@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0] — 2026-08-09
+
+### Added
+- **Slack/Discord Webhooks**: Automatically send test results to a webhook URL by configuring `notifications.webhookUrl`.
+- **Ignore Regions**: Mask specific absolute coordinate areas using `options.ignoreRegions` (useful for canvas or cross-origin iFrames).
+- **Auto-Login**: `auth capture` can now fully automate the login flow if `auth.autoLogin` is configured with credentials and CSS selectors.
+- **CI/CD Pipeline**: Added standard GitHub Actions workflow for visual regression testing.
+- **NPM Package Metadate**: Added repository and author info to `package.json` for NPM publishing.
+
+---
+
 ## [1.0.0] — 2026-08-09
 
 ### Added

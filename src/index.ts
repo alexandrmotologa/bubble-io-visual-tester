@@ -168,6 +168,31 @@ program
         : pc.green(`✓ All ${summary.total} tests passed`),
     );
 
+    // Step 6: Webhook notifications
+    if (config.notifications?.webhookUrl) {
+      const shouldSend = !config.notifications.onFailureOnly || (summary.failed > 0 || summary.errors > 0);
+      if (shouldSend) {
+        logger.step('Sending webhook notification...');
+        try {
+          const payload = {
+            text: `🫧 *Visual Regression Test Results*\n- Total: ${summary.total}\n- Passed: ${summary.passed}\n- Failed: ${summary.failed}\n- Errors: ${summary.errors}\n- Pass Rate: ${Math.round((summary.passed / summary.total) * 100)}%`
+          };
+          const res = await fetch(config.notifications.webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (res.ok) {
+            logger.success('Webhook sent successfully');
+          } else {
+            logger.warn(`Webhook returned status ${res.status}`);
+          }
+        } catch (err) {
+          logger.warn(`Failed to send webhook: ${String(err)}`);
+        }
+      }
+    }
+
     // CI exit code
     if ((summary.failed > 0 || summary.errors > 0) && config.options.failOnMismatch) {
       process.exit(1);

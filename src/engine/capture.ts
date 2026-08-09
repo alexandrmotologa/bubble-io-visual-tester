@@ -183,6 +183,7 @@ async function capturePage(
 
     // Mask volatile dynamic elements with a solid grey colour
     await injectMaskingStyles(pwPage, config.options.maskSelectors);
+    await injectIgnoreRegions(pwPage, config.options.ignoreRegions, page.name);
 
     // Take the screenshot
     await pwPage.screenshot({
@@ -218,6 +219,26 @@ async function injectMaskingStyles(pwPage: Page, selectors: string[]): Promise<v
   await pwPage.addStyleTag({ content: css });
 }
 
+async function injectIgnoreRegions(pwPage: Page, regions: VisualConfig['options']['ignoreRegions'], pageName: string): Promise<void> {
+  const applicableRegions = regions.filter(r => !r.page || r.page === pageName);
+  if (applicableRegions.length === 0) return;
+
+  await pwPage.evaluate((regs) => {
+    regs.forEach(r => {
+      const el = document.createElement('div');
+      el.style.position = 'absolute';
+      el.style.left = `${r.x}px`;
+      el.style.top = `${r.y}px`;
+      el.style.width = `${r.width}px`;
+      el.style.height = `${r.height}px`;
+      el.style.backgroundColor = '#cccccc';
+      el.style.zIndex = '2147483647';
+      el.style.pointerEvents = 'none';
+      document.body.appendChild(el);
+    });
+  }, applicableRegions);
+}
+
 // ─── Auth capture (headed browser for manual login) ───────────────────────────
 
 export async function captureAuthState(config: VisualConfig): Promise<void> {
@@ -230,22 +251,44 @@ export async function captureAuthState(config: VisualConfig): Promise<void> {
 
   const storageStatePath = config.auth.storageStatePath;
 
-  p.intro(pc.bgCyan(pc.black(' 🔐  Auth Capture — Manual Login Flow ')));
-  logger.info(`Launching a ${pc.bold('visible')} browser. Please log in manually.`);
-  logger.info(`The session will be saved to: ${pc.yellow(storageStatePath)}`);
-  logger.message(pc.dim('Press Enter in this terminal once you are logged in and on the app.\n'));
+  const isAuto = !!config.auth.autoLogin;
 
-  const browser = await chromium.launch({ headless: false });
+  if (isAuto) {
+    p.intro(pc.bgCyan(pc.black(' 🔐  Auth Capture — Auto-Login Flow ')));
+    logger.info(`Running automated login for ${pc.yellow(config.auth.autoLogin!.username)}...`);
+  } else {
+    p.intro(pc.bgCyan(pc.black(' 🔐  Auth Capture — Manual Login Flow ')));
+    logger.info(`Launching a ${pc.bold('visible')} browser. Please log in manually.`);
+    logger.message(pc.dim('Press Enter in this terminal once you are logged in and on the app.\n'));
+  }
+  logger.info(`The session will be saved to: ${pc.yellow(storageStatePath)}`);
+
+  const browser = await chromium.launch({ headless: isAuto });
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const pwPage  = await context.newPage();
 
   await pwPage.goto(config.auth.loginUrl, { waitUntil: 'networkidle' });
 
-  // Wait for the user to press Enter
-  await p.text({
-    message: 'Press Enter once you are fully logged in…',
-    placeholder: '(just press Enter)',
-  });
+  if (isAuto) {
+    const al = config.auth.autoLogin!;
+    await pwPage.fill(al.usernameSelector, al.username);
+    await pwPage.fill(al.passwordSelector, al.password);
+    
+    // Click submit and wait for navigation
+    await Promise.all([
+      pwPage.waitForNavigation({ waitUntil: 'networkidle' }).catch(() => {}),
+      pwPage.click(al.submitSelector)
+    ]);
+    
+    // Extra buffer for cookies to settle
+    await pwPage.waitForTimeout(2000);
+  } else {
+    // Wait for the user to press Enter
+    await p.text({
+      message: 'Press Enter once you are fully logged in…',
+      placeholder: '(just press Enter)',
+    });
+  }
 
   // Save storage state
   await context.storageState({ path: storageStatePath });

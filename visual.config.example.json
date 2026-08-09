@@ -19,12 +19,26 @@
   ],
   "auth": {
     "enabled": false,
-    "loginUrl": "https://myapp.bubbleapps.io/login",
-    "storageStatePath": "./auth.json"
+    "loginUrl": "https://example.com/login",
+    "storageStatePath": "./auth.json",
+    "autoLogin": {
+      "username": "admin@example.com",
+      "password": "secretpassword",
+      "usernameSelector": "input[type='email']",
+      "passwordSelector": "input[type='password']",
+      "submitSelector": "button[type='submit']"
+    }
+  },
+  "notifications": {
+    "webhookUrl": "https://hooks.slack.com/services/...",
+    "onFailureOnly": true
   },
   "options": {
     "threshold": 0.1,
     "maskSelectors": [".dynamic-timestamp", ".user-avatar", ".realtime-chart"],
+    "ignoreRegions": [
+      { "x": 100, "y": 200, "width": 300, "height": 50, "page": "Home" }
+    ],
     "failOnMismatch": true,
     "fullPage": false,
     "concurrency": 3

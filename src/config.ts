@@ -20,15 +20,38 @@ const pageSchema = z.object({
   waitForTimeout:  z.number().int().positive().optional(),
 });
 
+const autoLoginSchema = z.object({
+  username:         z.string().min(1, 'Username is required'),
+  password:         z.string().min(1, 'Password is required'),
+  usernameSelector: z.string().min(1, 'Username selector is required'),
+  passwordSelector: z.string().min(1, 'Password selector is required'),
+  submitSelector:   z.string().min(1, 'Submit selector is required'),
+});
+
 const authSchema = z.object({
   enabled:          z.boolean().default(false),
   loginUrl:         z.string().url('auth.loginUrl must be a valid URL').optional(),
   storageStatePath: z.string().default('./auth.json'),
+  autoLogin:        autoLoginSchema.optional(),
+});
+
+const ignoreRegionSchema = z.object({
+  x:      z.number().int().nonnegative(),
+  y:      z.number().int().nonnegative(),
+  width:  z.number().int().positive(),
+  height: z.number().int().positive(),
+  page:   z.string().optional(),
+});
+
+const notificationsSchema = z.object({
+  webhookUrl:    z.string().url('Webhook URL must be valid'),
+  onFailureOnly: z.boolean().default(true),
 });
 
 const optionsSchema = z.object({
   threshold:       z.number().min(0).max(1).default(0.1),
   maskSelectors:   z.array(z.string()).default([]),
+  ignoreRegions:   z.array(ignoreRegionSchema).default([]),
   failOnMismatch:  z.boolean().default(true),
   fullPage:        z.boolean().default(false),
   concurrency:     z.number().int().positive().max(10).default(3),
@@ -50,6 +73,7 @@ export const configSchema = z.object({
     ]),
   pages:   z.array(pageSchema).min(1, 'At least one page is required'),
   auth:    authSchema.default({ enabled: false, storageStatePath: './auth.json' }),
+  notifications: notificationsSchema.optional(),
   options: optionsSchema.default({}),
 });
 
@@ -266,6 +290,7 @@ export async function runSetupWizard(): Promise<VisualConfig> {
       fullPage:        fullPage as boolean,
       failOnMismatch:  failOnMismatch as boolean,
       maskSelectors,
+      ignoreRegions:   [],
       concurrency:     3,
     },
   };

@@ -169,9 +169,34 @@ Controls authentication for protected pages.
 
 > See [AUTH.md](./AUTH.md) for the full authentication guide.
 
+### `auth.autoLogin` (optional)
+An object to configure fully automated login, perfect for CI environments. If missing, `auth capture` will run in manual mode.
+
+```jsonc
+"autoLogin": {
+  "username": "admin@example.com",
+  "password": "secretpassword",
+  "usernameSelector": "input[type='email']", // CSS selector for username field
+  "passwordSelector": "input[type='password']", // CSS selector for password field
+  "submitSelector": "button[type='submit']" // CSS selector for login button
+}
+```
+
 ---
 
-## `options` Object
+## 4. Notifications (`notifications`)
+
+Configure webhook notifications to alert your team when tests finish.
+
+### `notifications.webhookUrl` (string)
+A valid URL to receive a POST request with a JSON payload of the test results (e.g. Slack, Discord, Microsoft Teams).
+
+### `notifications.onFailureOnly` (boolean)
+If `true`, webhooks will only be sent if at least one test failed or errored. If `false`, webhooks are sent on every run. Default: `true`.
+
+---
+
+## 5. Options (`options`) Object
 
 ### `threshold` *(number, 0.0–1.0, default: `0.1`)*
 
@@ -194,25 +219,28 @@ The test **fails** if the proportion of changed pixels also exceeds this value.
 
 ---
 
-### `maskSelectors` *(string[], default: `[]`)*
-
-CSS selectors for elements that should be masked with a solid grey rectangle before screenshotting. Use this for elements that legitimately change between runs.
+### `options.maskSelectors` (array of strings)
+An array of CSS selectors. Before taking a screenshot, any element matching these selectors will be masked with a solid `#cccccc` grey block.
+Use this to hide volatile elements that change frequently (e.g. live clocks, dates, rotating avatars, ads).
 
 ```json
-"maskSelectors": [
-  ".timestamp",
-  ".user-avatar",
-  ".realtime-chart",
-  "[data-type='countdown']"
-]
+"maskSelectors": [".dynamic-timestamp", ".user-avatar"]
 ```
 
-Common candidates in Bubble apps:
-- Timestamps and "time ago" labels
-- User profile pictures (loaded from external URLs)
-- Live data charts
-- Countdown timers
-- Ads or embedded third-party widgets
+### `options.ignoreRegions` (array of objects)
+An array of absolute coordinate regions to mask with a solid grey block. Useful for things like iFrames or Canvas elements where CSS selectors cannot target the interior.
+
+```jsonc
+"ignoreRegions": [
+  { 
+    "x": 100, 
+    "y": 200, 
+    "width": 300, 
+    "height": 50, 
+    "page": "Dashboard" // Optional: only apply this mask to the "Dashboard" page
+  }
+]
+```
 
 ---
 
