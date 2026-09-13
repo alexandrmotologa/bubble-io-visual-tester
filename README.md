@@ -1,7 +1,6 @@
-# 🫧 bubble-io-visual-tester
+# bubble-io-visual-tester
 
-> **Visual Regression Testing CLI for Bubble.io applications.**  
-> Catch pixel-level layout regressions before they reach production — automatically.
+> Visual regression testing CLI for Bubble.io applications. Catch pixel-level layout regressions before they reach production.
 
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue)](https://www.typescriptlang.org)
@@ -10,21 +9,21 @@
 
 ---
 
-Bubble.io apps rely heavily on visual layouts, responsive constraints, and dynamic states. A single editor change can silently break your mobile layout, shift a Group container, or cause a Repeating Group to overflow. There is no source diff to catch this — only your eyes.
+Bubble applications rely on responsive layouts and dynamic states. Editor updates can alter container positions or cause repeating groups to overflow without producing standard code diffs to review in git.
 
-- **Component-Level Testing**: Screenshot specific DOM elements (like forms or sidebars) instead of just the whole page.
-- **Enterprise CI/CD Sharding**: Split your tests across dozens of CI runners (`--shard 1/3`) for lightning-fast execution.
-- **Cloud Storage (AWS S3)**: Automatically push/pull baseline snapshots from S3 to keep your Git repository clean.
-- **Smart Masking**: Ignore dynamic areas via CSS selectors (`.timestamp`), exact coordinates, or specific RGB colors!
-- **Auto-Login Support**: Supports fully automated credentials login or persisting session cookies for protected pages.
+- **Component-level testing**: Capture targeted DOM elements (such as forms or navigation bars) instead of full pages.
+- **CI/CD sharding**: Split test suites across multiple CI runners (`--shard 1/3`) for parallel execution.
+- **Cloud storage (AWS S3)**: Push and pull baseline snapshots to or from S3 to avoid storing test assets in version control.
+- **Dynamic masking**: Exclude volatile UI elements using CSS selectors (`.timestamp`), coordinates, or specific RGB color bounds.
+- **Authentication handling**: Supports credential-based login automation and saved session storage states.
 
-**bubble-io-visual-tester** automates this process:
+### Workflow
 
-1. **Captures a baseline** — screenshots of your live app across every viewport and browser you specify.
-2. **After a deployment or editor change**, captures the current `version-test` build.
-3. **Diffs every screenshot pixel-by-pixel** using Playwright + pixelmatch.
-4. **Generates an interactive HTML report** with a before/after slider comparison.
-5. **Exits with code `1`** if regressions are found — blocking broken CI/CD pipelines.
+1. **Capture baseline**: Screenshots the live production app across specified viewports and browsers.
+2. **Capture test build**: Screenshots the `version-test` build after changes are applied.
+3. **Compare images**: Compares screenshots pixel-by-pixel with Playwright and pixelmatch.
+4. **Generate report**: Creates an interactive HTML report with side-by-side and overlay sliders.
+5. **Exit code enforcement**: Returns exit code `1` when regressions are detected to fail automated CI pipelines.
 
 ---
 
@@ -34,24 +33,24 @@ Bubble.io apps rely heavily on visual layouts, responsive constraints, and dynam
 # 1. Install Node.js dependencies
 npm install
 
-# 2. Install Playwright browsers (first time only)
+# 2. Install Playwright browsers (first run only)
 npx playwright install chromium
-# For all browsers (WebKit + Firefox too):
+# Or install all browsers (WebKit and Firefox included):
 npx playwright install
 
 # 3. Build the CLI
 npm run build
 ```
 
-After building, all commands are run via:
+After compilation, run commands with:
 ```bash
 node dist/index.js <command>
 ```
 
-**Optional — install globally** so you can use `bubble-tester` as a command anywhere:
+To install the binary globally for direct terminal access:
 ```bash
 npm link
-# Then use:
+# Then run:
 bubble-tester <command>
 ```
 
@@ -59,74 +58,71 @@ bubble-tester <command>
 
 ## Quick Start
 
-### 1. Set up your config
+### 1. Configure the Project
 
-Launch the **interactive TUI menu** — it stays open after each action:
+Start the interactive terminal wizard:
 
 ```bash
 node dist/index.js
-# → Choose "⚙️ Setup Wizard" from the menu
+# Select "Setup Wizard" from the menu
 ```
 
-Or run the setup wizard directly:
+Alternatively, run the wizard directly:
 
 ```bash
 node dist/index.js setup
 ```
 
-Or copy and edit the example config manually:
+Or copy and modify the sample configuration:
 
 ```bash
 cp visual.config.example.json visual.config.json
-# Edit visual.config.json with your Bubble app URLs and pages
 ```
 
-### 2. Capture a baseline
+### 2. Capture a Baseline
 
 ```bash
 node dist/index.js baseline
 ```
 
-This screenshots your **live app** (`appUrlLive`) across all configured viewports and browsers.  
-Saved to `./snapshots/baseline/`. **Commit this folder to version control.**
+This saves screenshots of your live app (`appUrlLive`) across all configured viewports and browsers into `./snapshots/baseline/`. Commit this directory to version control.
 
-### 3. Make changes in the Bubble editor
+### 3. Deploy or Edit in Bubble
 
-Deploy to `version-test`, or make changes in your test environment.
+Deploy changes to `version-test` or update your development branch.
 
-### 4. Run the visual regression test
+### 4. Run Visual Regression Tests
 
 ```bash
 node dist/index.js test
 ```
 
-This captures your **test app** (`appUrlTest`), runs a pixel diff against the baseline, and opens an interactive HTML report in your browser.
+This captures screenshots from `appUrlTest`, computes pixel diffs against the baseline, and opens the generated HTML report in your browser.
 
 ---
 
-## Interactive TUI Menu
+## Interactive Menu
 
-Running `node dist/index.js` with no arguments launches a menu-driven interface.  
-**The menu remains open after each action** — you can run multiple commands in sequence without restarting.
+Running `node dist/index.js` without arguments starts an interactive menu that remains open between operations:
 
 ```
-┌   🫧  bubble-io-visual-tester
+┌   bubble-io-visual-tester
 │
 ◆  What would you like to do?
-│  ● 📸  Capture Baseline         (Screenshot your live app)
-│  ○ 🔍  Run Visual Tests         (Compare current vs baseline)
-│  ○ 📊  Open Last Report         (View the HTML report)
-│  ○ 🔐  Capture Auth Session     (Save login state for protected pages)
-│  ○ 🗑   Clean Snapshots & Reports
-│  ○ ⚙️   Setup Wizard            (Create or update visual.config.json)
+│  ● Capture Baseline         (Screenshot live app)
+│  ○ Run Visual Tests         (Compare current vs baseline)
+│  ○ Open Last Report         (View the HTML report)
+│  ○ Capture Auth Session     (Save login state for protected pages)
+│  ○ Clean Snapshots & Reports
+│  ○ Setup Wizard            (Create or update visual.config.json)
 └
 ```
 
-Press `Ctrl+C` at any time to exit.
+Press `Ctrl+C` to exit.
 
 ---
 
-## CLI Commands
+## CLI Reference
 
 ```
 node dist/index.js [options] [command]
@@ -134,33 +130,33 @@ node dist/index.js [options] [command]
 
 | Command | Description |
 |---|---|
-| *(no args)* | Interactive TUI menu (stays open between actions) |
-| `setup` | Run the interactive setup wizard |
-| `baseline` | Capture live app as baseline reference |
-| `test` | Capture current state + diff + HTML report |
-| `auth capture` | Launch headed browser for manual login → save session |
-| `clean` | Delete all snapshots and reports |
-| `report` | Re-open the last generated HTML report |
+| *(no args)* | Interactive menu interface |
+| `setup` | Run configuration wizard |
+| `baseline` | Capture live environment as baseline reference |
+| `test` | Capture test environment, compute diffs, and generate report |
+| `auth capture` | Launch browser for manual login and save session state |
+| `clean` | Remove snapshots and generated reports |
+| `report` | Open the most recent HTML report in the browser |
 
 ### Global Options
 
-| Flag | Description |
+| Option | Description |
 |---|---|
-| `--config <path>` | Use a custom config file path |
-| `--no-open` | Don't auto-open the HTML report |
-| `-v, --version` | Print version |
+| `--config <path>` | Path to custom configuration file |
+| `--no-open` | Disable automatic opening of the HTML report |
+| `-v, --version` | Display CLI version |
 
 ### Command Options
 
 ```bash
-# Override browser for a single run
+# Override browser for a specific run
 node dist/index.js test --browser webkit
 node dist/index.js baseline --browser firefox
 
-# Use a custom config file
+# Use an alternate config file
 node dist/index.js test --config ./configs/mobile.config.json
 
-# CI-friendly: no browser popup, exit code 1 on failures
+# Run in headless CI mode
 node dist/index.js test --no-open
 ```
 
@@ -170,75 +166,71 @@ node dist/index.js test --no-open
 
 ```jsonc
 {
-  // URL of your live/production app (used as baseline source)
+  // Production URL used as the baseline source
   "appUrlLive": "https://myapp.bubbleapps.io",
 
-  // URL of your test/version-test environment
+  // Target environment URL for regression testing
   "appUrlTest": "https://myapp.bubbleapps.io/version-test",
 
-  // Browsers to test with (at least one required)
-  "browsers": ["chromium"],                    // "webkit" | "firefox" also supported
+  // Target browsers
+  "browsers": ["chromium"], // Supports "webkit" and "firefox"
 
-  // Viewport configurations
+  // Viewport sizes
   "viewports": [
     { "name": "desktop", "width": 1920, "height": 1080 },
     { "name": "tablet",  "width": 768,  "height": 1024 },
     { "name": "mobile",  "width": 375,  "height": 812  }
   ],
 
-  // Pages to test
+  // Page definitions
   "pages": [
     { "path": "/", "name": "Home" },
     { "path": "/login", "name": "Login" },
     {
       "path": "/dashboard",
       "name": "Dashboard",
-      // Wait for a specific element before screenshotting (Repeating Groups, API data)
+      // Wait for specific element before capture (useful for repeating groups and APIs)
       "waitForSelector": ".dashboard-loaded",
-      // Additional delay in ms after selector (for animations)
+      // Additional stabilization delay in milliseconds
       "waitForTimeout": 1500
     }
   ],
 
-  // Authentication (for protected Bubble pages)
+  // Authentication configuration for restricted pages
   "auth": {
     "enabled": false,
-    // URL of your login page
     "loginUrl": "https://myapp.bubbleapps.io/login",
-    // Path to save/load the session state
     "storageStatePath": "./auth.json"
   },
 
   "options": {
-    // Per-pixel color difference tolerance (0.0–1.0, default 0.1)
-    // Lower = stricter. 0.1 means 10% color diff allowed per pixel before counting it as changed.
+    // Pixel color difference threshold (0.0 to 1.0, default: 0.1)
     "threshold": 0.1,
 
-    // CSS selectors to mask with solid grey before screenshotting.
-    // Use for: live clocks, user avatars, real-time charts, animated elements.
+    // CSS selectors masked with solid grey prior to capture
     "maskSelectors": [".timestamp", ".user-avatar", ".realtime-chart"],
 
-    // Exit with code 1 on failure (blocks CI pipelines)
+    // Fail execution when mismatches are detected
     "failOnMismatch": true,
 
-    // Capture the full scrolling page, not just the visible viewport
+    // Capture full scrolling height instead of viewport size only
     "fullPage": false,
 
-    // Number of pages to capture in parallel (default 3, max 10)
+    // Number of pages captured in parallel (1-10, default: 3)
     "concurrency": 3
   }
 }
 ```
 
-> 📖 See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for the full configuration reference.
+See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for full configuration details.
 
 ---
 
 ## Authentication for Protected Pages
 
-If your Bubble app requires users to be logged in:
+For applications requiring user login:
 
-### Step 1: Enable auth in config
+### 1. Enable Authentication in Config
 
 ```json
 "auth": {
@@ -248,25 +240,25 @@ If your Bubble app requires users to be logged in:
 }
 ```
 
-### Step 2: Capture your session
+### 2. Capture Session State
 
 ```bash
 node dist/index.js auth capture
 ```
 
-A real (visible) browser window opens. Log in manually, then press **Enter** in the terminal. Your session cookies and local storage are saved to `auth.json`.
+A browser window opens to your login page. Log in manually, then press **Enter** in your terminal. Session cookies and local storage tokens are written to `auth.json`.
 
-> ⚠️ **Never commit `auth.json` to version control.** It is already in `.gitignore`.
+> Do not commit `auth.json` to source control. It is excluded by `.gitignore`.
 
-### Step 3: Run normally
+### 3. Run Tests
 
-All subsequent `baseline` and `test` commands will load the saved session automatically.
+Subsequent `baseline` and `test` executions load the stored session state automatically.
 
-> 📖 See [docs/AUTH.md](docs/AUTH.md) for the full authentication guide including CI/CD secret setup.
+See [docs/AUTH.md](docs/AUTH.md) for instructions on setting up CI/CD secret sessions.
 
 ---
 
-## CI/CD Integration (GitHub Actions)
+## CI/CD Pipeline (GitHub Actions)
 
 ```yaml
 # .github/workflows/visual-regression.yml
@@ -318,52 +310,51 @@ jobs:
           path: snapshots/diff/
 ```
 
-> 📖 See [docs/CI-CD.md](docs/CI-CD.md) for GitLab CI, Bitbucket Pipelines, and multi-browser matrix examples.
+See [docs/CI-CD.md](docs/CI-CD.md) for GitLab CI, Bitbucket Pipelines, and matrix build recipes.
 
 ---
 
-## Snapshot Directory Layout
+## Directory Structure
 
 ```
 snapshots/
   baseline/
-    home-desktop-chromium.png       ← commit to git ✅
+    home-desktop-chromium.png       # Committed to git
     home-mobile-chromium.png
     dashboard-desktop-chromium.png
   current/
-    home-desktop-chromium.png       ← gitignored ❌
-    ...
+    home-desktop-chromium.png       # Ignored by git
   diff/
-    home-desktop-chromium-diff.png  ← gitignored ❌ (red-highlighted changes)
+    home-desktop-chromium-diff.png  # Ignored by git (shows pixel differences)
 visual-report/
-  index.html                        ← gitignored ❌ (self-contained, images as base64)
+  index.html                        # Self-contained report with base64 images
 ```
 
-> **Tip**: Commit `snapshots/baseline/` to version control. Never commit `snapshots/current/` or `snapshots/diff/`.
+Commit `snapshots/baseline/` to version control. Directories `snapshots/current/` and `snapshots/diff/` should remain untracked.
 
 ---
 
-## HTML Report Features
+## HTML Report
 
-- 📊 **Summary bar** — Total / Passed / Failed / Errors / Pass Rate / Avg Mismatch
-- 🔍 **Filter tabs** — All / Passed / Failed / Errors / Missing Baseline
-- 🖼️ **Interactive slider** — drag to compare Baseline vs Current
-- 🔴 **Diff image** — highlights changed pixels in vivid red
-- 💾 **Self-contained** — single HTML file with images embedded as base64, shareable via email
-- 📱 **Responsive** — works on any screen size
+- Summary metrics for total, passed, failed, and error counts
+- Status filtering tabs
+- Before-and-after slider comparison
+- Visual diff highlights showing changed pixels
+- Standalone HTML artifact with base64 embedded images
+- Responsive display for desktop and mobile viewports
 
 ---
 
 ## Development
 
 ```bash
-# Run CLI in development (no build step needed)
+# Start CLI in development mode
 npm run dev
 
-# Compile to dist/
+# Compile TypeScript
 npm run build
 
-# Run compiled version
+# Execute compiled output
 node dist/index.js
 ```
 
@@ -371,30 +362,28 @@ node dist/index.js
 
 ## Documentation
 
-| Document | Description |
-|---|---|
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Internal design, data flow diagrams, module breakdown |
-| [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | Detailed reference for every config field |
-| [docs/CI-CD.md](docs/CI-CD.md) | GitHub Actions, GitLab CI, Bitbucket Pipelines |
-| [docs/AUTH.md](docs/AUTH.md) | Authentication guide for protected Bubble pages |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute to this project |
-| [CHANGELOG.md](CHANGELOG.md) | Version history |
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - Internal design and module structure
+- [docs/CONFIGURATION.md](docs/CONFIGURATION.md) - Configuration options and schemas
+- [docs/CI-CD.md](docs/CI-CD.md) - CI/CD pipeline examples
+- [docs/AUTH.md](docs/AUTH.md) - Authentication setups for protected routes
+- [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
+- [CHANGELOG.md](CHANGELOG.md) - Release history
 
 ---
 
-## Tech Stack
+## Technology Stack
 
-| Technology | Purpose |
-|---|---|
-| **TypeScript 5.4** | Type-safe source with strict ESM |
-| **Playwright 1.44** | Headless browser automation (Chromium, WebKit, Firefox) |
-| **pixelmatch** | Pixel-by-pixel image comparison |
-| **pngjs** | PNG image read/write |
-| **zod** | Config schema validation with clear error messages |
-| **commander** | CLI argument parsing |
-| **@clack/prompts** | Beautiful interactive TUI menus and wizards |
-| **picocolors** | Lightweight terminal colour output |
-| **open** | Cross-platform browser launching |
+| Component | Library | Purpose |
+|---|---|---|
+| Language | TypeScript 5.4 | Type safety and ESM support |
+| Browser Engine | Playwright 1.44 | Headless automation across Chromium, WebKit, Firefox |
+| Image Comparison | pixelmatch | Pixel-level visual diffing |
+| Image I/O | pngjs | PNG file encoding and decoding |
+| Validation | zod | Schema validation for configurations |
+| CLI Parser | commander | Command-line option parsing |
+| Terminal UI | @clack/prompts | Interactive prompts and menu flows |
+| Terminal Styling | picocolors | ANSI color formatting |
+| Utilities | open | Cross-platform browser launch |
 
 ---
 
